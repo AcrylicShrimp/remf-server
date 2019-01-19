@@ -1,15 +1,17 @@
 
 'use strict';
 
-const bodyParser  = require('body-parser');
 const compression = require('compression');
+const express     = require('express');
 const helmet      = require('helmet');
 const requestIp   = require('request-ip');
+
+const logger = require('./logger');
 
 module.exports = [
 	helmet(),
 	compression(),
-	bodyParser.urlencoded({ extended: true }),
-	bodyParser.json(),
-	requestIp.mw()
+	requestIp.mw(),
+	express.urlencoded({ extended: true }),
+	express.json()
 ];

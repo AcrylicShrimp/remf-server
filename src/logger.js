@@ -1,11 +1,12 @@
 
 'use strict';
 
-const path = require('path');
-
+const path                   = require('path');
 const winston                = require('winston');
 const winstonDailyRotateFile = require('winston-daily-rotate-file');
-const logger                 = winston.createLogger({
+
+const logger = winston.createLogger({
+	levels    : winston.config.syslog.levels,
 	transports: [
 		new winston.transports.Console({
 			format: winston.format.combine(
@@ -38,7 +39,13 @@ const logger                 = winston.createLogger({
 		})
 	],
 	exceptionHandlers: [
-		new winston.transports.Console(),
+		new winston.transports.Console({
+			format: winston.format.combine(
+				winston.format.timestamp(),
+				winston.format.colorize(),
+				winston.format.printf(log => `[${log.timestamp}] ${log.level} : ${log.message}`)
+			)
+		}),
 		new winstonDailyRotateFile({
 			zippedArchive: true,
 			maxSize      : '24m',

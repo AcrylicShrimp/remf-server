@@ -1,20 +1,28 @@
 
 'use strict';
 
-const http  = require('http');
-const https = require('https');
+const http = require('http');
 
 const application = require('./application');
-const httpServer  = http.createServer(application);
-//const httpsServer = https...;
+const database    = require('./database');
+const logger      = require('./logger');
 
-const logger = require('./logger');
+logger.notice(`The Refm server is starting up on ${process.env.NODE_ENV} mode.`);
 
-logger.info('Setting up the server...');
+const databaseHost = 'localhost';
 
-const httpPort  = process.env.HTTP_PORT || 80;
-const httpsPort = process.env.HTTPS_PORT || 443;
+database(databaseHost, null, 'remf', null, null, (err, url) => {
+	if (err) {
+		logger.emerg(`Failed to connect to the database at ${url} :\n${err}`);
+		return;
+	}
 
-httpServer.listen(httpPort, () => {
-	logger.info('HTTP server is up.');
+	logger.notice(`Successfully connected to the database at ${url}.`);
+
+	const httpPort   = process.env.PORT || 80;
+	const httpServer = http.createServer(application);
+
+	httpServer.listen(httpPort, () => {
+		logger.notice(`The HTTP server is running on port ${httpPort}.`);
+	});
 });

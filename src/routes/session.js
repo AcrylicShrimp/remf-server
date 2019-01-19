@@ -1,122 +1,88 @@
 
 'use strict';
 
-const crypto = require('crypto');
-const sha256 = crypto.createHash('sha256');
-const uuid   = require('uuid');
+const express             = require('express');
+const validator           = require('validator');
+const expressAsyncHandler = require('express-async-handler');
 
-const express = require('express');
-const router  = express.Router();
+const helper = require('./helper');
+const logger = require('../logger');
 
 const Session = require('../models/session');
 const User    = require('../models/user');
 
-const logger = require('../logger');
+const router = express.Router();
 
-router.post('/:username', (req, res) => {
-	if (!/\S{3,15}/g.test(req.params.username)) {
-		res.status(400).end();
-		return;
-	}
+router.post('/', expressAsyncHandler(async (req, res) => {
+	const username = String(req.body.username || '').trim();
+	const password = String(req.body.password || '');
 
-	if (!req.body.password) {
-		res.status(400).end();
-		return;
-	}
+	if (!validator.isAlphanumeric(username) ||
+		!validator.isLength(username, { min: 4 }) ||
+		!validator.isLength(password, { min: 4 }))
+		return res.status(400).end();
 
-	User.findOne({ username: req.params.username }, { _id: false, username: true, passwordHash: true }, (err, user) => {
-		if (err) {
-			logger.error(`An database error occurred while handling request : ${err}`);
-			res.status(500).end();
-			return;
-		}
+	let user = await User.findOne({ username: username }, { _id: true, password: true, loginedAt: true });
 
-		const passwordHash = sha256.update(req.body.password).digest('hex');
-
-		if (!user) {
-			user              = new User();
-			user.username     = req.params.username;
-			user.passwordHash = passwordHash;
-
-			user.save(err => {
-				if (err) {
-					logger.error(`An database error occurred while handling request : ${err}`);
-					res.status(500).end();
-					return;
-				}
-
-				logger.info(`A new user has been created : ${user}`);
-
-				const session             = new Session();
-				      session.username    = user.username;
-				      session.sessionHash = sha256.update(uuid.v4()).digest('hex');
-
-				session.save(err => {
-					if (err) {
-						logger.error(`An database error occurred while handling request : ${err}`);
-						res.status(500).end();
-						return;
-					}
-
-					logger.info(`A new session has been created : ${session}`);
-
-					res.status(200).json({
-						sessionHash: session.sessionHash
-					});
-				});
-			});
-			return;
-		}
-
-		if (user.passwordHash !== passwordHash) {
-			res.status(401).end();
-			return;
-		}
-
-		const session             = new Session();
-		      session.username    = user.username;
-		      session.sessionHash = sha256.update(uuid.v4()).digest('hex');
-
-		session.save(err => {
-			if (err) {
-				logger.error(`An database error occurred while handling request : ${err}`);
-				res.status(500).end();
-				return;
-			}
-
-			logger.info(`A new session has been created : ${session}`);
-
-			res.status(200).json({
-				sessionHash: session.sessionHash
-			});
+	if (!user) {
+		user = new User({
+			username: username,
+			password: helper.hashPassword(password)
 		});
-	});
-});
 
-router.delete('/:username', (req, res) => {
-	if (!req.body.sessionHash) {
-		res.status(400).end();
-		return;
+		user.loginedAt = user.createdAt;
+		await user.save();
+
+		logger.notice(`A new user '${username}' is created from '${req.ip}'.`);
 	}
 
-	Session.findOneAndRemove({ username: req.params.username, sessionHash: req.body.sessionHash }, (err, session) => {
-		if (err) {
-			logger.error(`An database error occurred while handling request : ${err}`);
-			res.status(500).end();
-			return;
-		}
+	if (user.password !== helper.hashPassword(password))
+		return res.status(401).end();
 
-		if (!session) {
-			res.status(401).end();
-			return;
-		}
+	let session = await Session.findOne({ user: user._id }, { _id: true });
 
-		res.status(200).end();
+	if (session)
+		await session.remove();
+
+	session = new Session({
+		user: user._id,
+		id  : helper.generateId()
 	});
-});
 
-router.all('/', (req, res) => {
-	res.status(405).end();
-});
+	session.usedAt = session.createdAt;
+	await session.save();
+
+	user.loginedAt = session.usedAt;
+	await user.save();
+
+	logger.notice(`A new session for user '${username}' is created from '${req.ip}'.`);
+
+	res.status(201).json({
+		sessionId: session.id
+	});
+}));
+
+router.all('/', (req, res) => res.status(405).end());
+
+router.delete('/:id', expressAsyncHandler(async (req, res) => {
+	const id = String(req.params.id || '').trim();
+
+	if (validator.isEmpty(id))
+		return res.status(400).end();
+
+	const session = await Session.findOneAndDelete({ id: id }).populate({
+		path  : 'user',
+		select: 'username'
+	});
+
+	if (!session)
+		return res.status(404).end();
+
+	logger.notice(`The session for user '${session.user.username}' is deleted from '${req.ip}'.`);
+
+	return res.status(204).end();
+}));
+
+router.all('/:id', (req, res) => res.status(405).end());
 
 module.exports = router;
