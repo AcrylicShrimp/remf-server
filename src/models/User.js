@@ -3,7 +3,7 @@
 
 const mongoose = require('mongoose');
 
-const schema = new mongoose.Schema({
+module.exports = mongoose.model('User', new mongoose.Schema({
 	username: {
 		type    : String,
 		index   : true,
@@ -15,6 +15,13 @@ const schema = new mongoose.Schema({
 		type    : String,
 		required: true
 	},
+	firebaseToken: {
+		type    : String,
+		index   : true,
+		unique  : true,
+		required: true,
+		dropDups: true
+	},
 	createdAt: {
 		type    : Date,
 		default : Date.now,
@@ -25,6 +32,4 @@ const schema = new mongoose.Schema({
 		required: false,
 		expires : '7d'
 	}
-});
-
-module.exports = mongoose.model('User', schema);
+}));

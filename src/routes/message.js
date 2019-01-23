@@ -1,12 +1,17 @@
 
 'use strict';
 
-const express = require('express');
-const router  = express.Router();
+const express             = require('express');
+const expressAsyncHandler = require('express-async-handler');
 
-router.post('/', (req, res) => {
+const router = express.Router();
+
+const firebaseAdmin = require('../firebase-admin');
+
+router.post('/', expressAsyncHandler(async (req, res) => {
+	await firebaseAdmin();
 	res.status(200).end();
-});
+}));
 
 router.delete('/', (req, res) => {
 	res.status(200).end();

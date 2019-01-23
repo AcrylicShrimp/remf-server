@@ -13,6 +13,7 @@
     "compression": "^1.7.3",
     "express": "^4.16.4",
     "express-async-handler": "^1.1.4",
+    "firebase-admin": "^6.5.0",
     "greenlock-express": "^2.6.7",
     "helmet": "^3.15.0",
     "mongoose": "^5.4.5",

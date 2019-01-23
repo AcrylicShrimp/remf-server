@@ -2,24 +2,26 @@
 'use strict';
 
 const express             = require('express');
-const validator           = require('validator');
 const expressAsyncHandler = require('express-async-handler');
+const validator           = require('validator');
 
 const helper = require('./helper');
 const logger = require('../logger');
 
-const Session = require('../models/session');
-const User    = require('../models/user');
+const Session = require('../models/Session');
+const User    = require('../models/User');
 
 const router = express.Router();
 
 router.post('/', expressAsyncHandler(async (req, res) => {
-	const username = String(req.body.username || '').trim();
-	const password = String(req.body.password || '');
+	const username      = String(req.body.username || '').trim();
+	const password      = String(req.body.password || '');
+	const firebaseToken = String(req.body.firebaseToken || '').trim();
 
 	if (!validator.isAlphanumeric(username) ||
 		!validator.isLength(username, { min: 4 }) ||
-		!validator.isLength(password, { min: 4 }))
+		!validator.isLength(password, { min: 4 }) ||
+		validator.isEmpty(firebaseToken))
 		return res.status(400).end();
 
 	let user = await User.findOne({ username: username }, { _id: true, password: true, loginedAt: true });
@@ -30,7 +32,8 @@ router.post('/', expressAsyncHandler(async (req, res) => {
 			password: helper.hashPassword(password)
 		});
 
-		user.loginedAt = user.createdAt;
+		user.firebaseToken = firebaseToken;
+		user.loginedAt     = user.createdAt;
 		await user.save();
 
 		logger.notice(`A new user '${username}' is created from '${req.ip}'.`);
@@ -62,7 +65,7 @@ router.post('/', expressAsyncHandler(async (req, res) => {
 	});
 }));
 
-router.all('/', (req, res) => res.status(405).end());
+router.all('/', (_, res) => res.status(405).end());
 
 router.delete('/:id', expressAsyncHandler(async (req, res) => {
 	const id = String(req.params.id || '').trim();
@@ -83,6 +86,6 @@ router.delete('/:id', expressAsyncHandler(async (req, res) => {
 	return res.status(204).end();
 }));
 
-router.all('/:id', (req, res) => res.status(405).end());
+router.all('/:id', (_, res) => res.status(405).end());
 
 module.exports = router;
