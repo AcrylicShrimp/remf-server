@@ -9,7 +9,9 @@ const router = express.Router();
 const firebaseAdmin = require('../firebase-admin');
 
 router.post('/', expressAsyncHandler(async (req, res) => {
-	await firebaseAdmin();
+	
+
+
 	res.status(200).end();
 }));
 
