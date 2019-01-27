@@ -3,7 +3,13 @@
 
 const mongoose = require('mongoose');
 
-module.exports = mongoose.model('Message', new mongoose.Schema({
+module.exports = mongoose.model('Content', new mongoose.Schema({
+	message: {
+		type    : mongoose.Schema.Types.ObjectId,
+		ref     : 'Message',
+		index   : true,
+		required: true
+	},
 	id: {
 		type    : String,
 		index   : true,
@@ -11,23 +17,19 @@ module.exports = mongoose.model('Message', new mongoose.Schema({
 		required: true,
 		dropDups: true
 	},
-	from: {
-		type    : mongoose.Schema.Types.ObjectId,
-		ref     : 'User',
-		index   : true,
+	order: {
+		type    : Number,
 		required: true
 	},
-	to: [{
-		type    : mongoose.Schema.Types.ObjectId,
-		ref     : 'User',
-		index   : true,
-		required: true
-	}],
-	title: {
+	type: {
 		type    : String,
 		required: true
 	},
-	contentCount: {
+	filename: {
+		type    : String,
+		required: true
+	},
+	size: {
 		type    : Number,
 		required: true
 	},

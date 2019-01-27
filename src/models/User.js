@@ -18,9 +18,7 @@ module.exports = mongoose.model('User', new mongoose.Schema({
 	firebaseToken: {
 		type    : String,
 		index   : true,
-		unique  : true,
-		required: true,
-		dropDups: true
+		required: true
 	},
 	createdAt: {
 		type    : Date,

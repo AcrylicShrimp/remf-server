@@ -7,10 +7,12 @@ const validator           = require('validator');
 const Session = require('../models/Session');
 
 module.exports = expressAsyncHandler(async (req, res, next) => {
-	if (validator.isEmpty(req.query.sessionId))
+	const sessionId = String(req.query.sessionId || '').trim();
+
+	if (validator.isEmpty(sessionId))
 		return res.status(401).end();
 
-	const session = await Session.findOne({ id: req.query.sessionId }).populate({ path: 'user' });
+	const session = await Session.findOne({ id: sessionId }).populate({ path: 'user' });
 
 	if (!session)
 		return res.status(401).end();

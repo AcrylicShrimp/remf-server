@@ -19,7 +19,7 @@ router.post('/', expressAsyncHandler(async (req, res) => {
 	const firebaseToken = String(req.body.firebaseToken || '').trim();
 
 	if (!validator.isAlphanumeric(username) ||
-		!validator.isLength(username, { min: 4 }) ||
+		!validator.isLength(username, { min: 4, max: 15 }) ||
 		!validator.isLength(password, { min: 4 }) ||
 		validator.isEmpty(firebaseToken))
 		return res.status(400).end();
@@ -36,7 +36,7 @@ router.post('/', expressAsyncHandler(async (req, res) => {
 		user.loginedAt     = user.createdAt;
 		await user.save();
 
-		logger.notice(`A new user '${username}' is created from '${req.ip}'.`);
+		logger.notice(`A new user '${username}' is created.`);
 	}
 
 	if (user.password !== helper.hashPassword(password))
@@ -58,7 +58,7 @@ router.post('/', expressAsyncHandler(async (req, res) => {
 	user.loginedAt = session.usedAt;
 	await user.save();
 
-	logger.notice(`A new session for user '${username}' is created from '${req.ip}'.`);
+	logger.notice(`A new session for user '${username}' is created.`);
 
 	res.status(201).json({
 		sessionId: session.id
@@ -67,13 +67,13 @@ router.post('/', expressAsyncHandler(async (req, res) => {
 
 router.all('/', (_, res) => res.status(405).end());
 
-router.delete('/:id', expressAsyncHandler(async (req, res) => {
-	const id = String(req.params.id || '').trim();
+router.delete('/:sessionId', expressAsyncHandler(async (req, res) => {
+	const sessionId = String(req.params.sessionId || '').trim();
 
-	if (validator.isEmpty(id))
+	if (validator.isEmpty(sessionId))
 		return res.status(400).end();
 
-	const session = await Session.findOneAndDelete({ id: id }).populate({
+	const session = await Session.findOneAndDelete({ id: sessionId }).populate({
 		path  : 'user',
 		select: 'username'
 	});
@@ -81,11 +81,11 @@ router.delete('/:id', expressAsyncHandler(async (req, res) => {
 	if (!session)
 		return res.status(404).end();
 
-	logger.notice(`The session for user '${session.user.username}' is deleted from '${req.ip}'.`);
+	logger.notice(`The session for user '${session.user.username}' is deleted.`);
 
-	return res.status(204).end();
+	res.status(204).end();
 }));
 
-router.all('/:id', (_, res) => res.status(405).end());
+router.all('/:sessionId', (_, res) => res.status(405).end());
 
 module.exports = router;

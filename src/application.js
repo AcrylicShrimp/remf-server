@@ -10,7 +10,7 @@ const application = express();
 application.use(requestHandler.logger);
 
 application.use(require('./middleware'));
-application.use(require('./router'));
+application.use(require('./application-router'));
 
 application.use(requestHandler.notFound);
 application.use(requestHandler.internalError);

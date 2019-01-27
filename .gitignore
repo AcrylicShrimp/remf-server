@@ -2,6 +2,12 @@
 # Credencials
 credencials/
 
+# Configs
+configs/
+
+# Storage
+storage/
+
 # Logs
 logs
 *.log
