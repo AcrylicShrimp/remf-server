@@ -1,7 +1,7 @@
 {
   "name": "remf-server",
   "version": "1.0.0",
-  "description": "A simple file-delivery service server.",
+  "description": "A lightweight, simple file-transfer service server.",
   "main": "src/main.js",
   "scripts": {
     "start-dev": "set NODE_ENV=development&&node src/main.js",
