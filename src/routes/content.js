@@ -21,7 +21,11 @@ router.get('/:contentId', sessionHandler, contentHandler, expressAsyncHandler(as
 
 	fs.createReadStream(path.join(storageSetting.storageRootPath, req.content.id)).pipe(res).on('error', err => {
 		logger.error(`An error occurred while piping the content '${req.content.id}' :\n${err}`);
-		res.end();
+		
+		//
+		//	Pass the error to the default error handler.
+		//
+		throw err;
 	});
 }));
 

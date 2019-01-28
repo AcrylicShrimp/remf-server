@@ -11,7 +11,7 @@ const database         = require('./database');
 const logger           = require('./logger');
 const timerTaskHandler = require('./timer-task-handler');
 
-logger.notice(`The Refm server is starting up on ${process.env.NODE_ENV} mode.`);
+logger.notice(`The refm server is starting up on ${process.env.NODE_ENV} mode.`);
 
 const databaseHost = 'localhost';
 

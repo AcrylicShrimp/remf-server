@@ -29,7 +29,7 @@ router.post('/', sessionHandler, expressAsyncHandler(async (req, res) => {
 		!validator.isInt(contentCount, { min: 1, max: 2048 }))
 		return res.status(400).end();
 
-	const usernameList = to.split('\n')
+	const usernameList = to.split('\n');
 
 	if (!usernameList.length)
 		usernameList.push(req.session.user.username);
@@ -49,7 +49,7 @@ router.post('/', sessionHandler, expressAsyncHandler(async (req, res) => {
 	});
 	await message.save();
 
-	logger.notice(`A new message is created by user '${req.session.user.username}'.`);
+	logger.notice(`A new message '${message.id}' is created by user '${req.session.user.username}'.`);
 
 	res.status(201).json({
 		messageId: message.id
@@ -58,13 +58,57 @@ router.post('/', sessionHandler, expressAsyncHandler(async (req, res) => {
 
 router.all('/', (_, res) => res.status(405).end());
 
-router.get('/:messageId', sessionHandler, messageHandler.senderAndReceiver, expressAsyncHandler(async (req, res) => {
-	let content = await Content.find({ message: req.message._id }, { id: true, order: true });
+router.get('/sent', sessionHandler, expressAsyncHandler(async (req, res) => {
+	const skip  = String(req.query.skip || '0').trim();
+	const limit = String(req.query.limit || '20').trim();
 
-	if (content.length !== req.message.contentCount)
+	if (!validator.isInt(skip, { min: 0 }) ||
+		!validator.isInt(limit, { min: 1, max: 100 }))
+		return res.status(400).end();
+
+	const message = await Message.find({ from: req.session.user._id, sent: true }, { id: true, to: true, title: true, contentCount: true, sentAt: true }).
+									sort({ sentAt: -1 }).
+									skip(Number(skip)).
+									limit(Number(limit)).
+									populate({
+										path  : 'to',
+										select: 'username'
+									});
+									
+	message.to = message.to.map(user => user.username);
+
+	res.status(200).json(message);
+}));
+
+router.all('/sent', (_, res) => res.status(405).end());
+
+router.get('/received', sessionHandler, expressAsyncHandler(async (req, res) => {
+	const skip  = String(req.query.skip || '0').trim();
+	const limit = String(req.query.limit || '20').trim();
+
+	if (!validator.isInt(skip, { min: 0 }) ||
+		!validator.isInt(limit, { min: 1, max: 100 }))
+		return res.status(400).end();
+
+	const message = await Message.find({ to: req.session.user._id, sent: true }, { id: true, to: true, title: true, contentCount: true, sentAt: true }).
+									sort({ sentAt: -1 }).
+									skip(Number(skip)).
+									limit(Number(limit)).
+									populate({
+										path  : 'to',
+										select: 'username'
+									});
+
+	
+}));
+
+router.all('/received', (_, res) => res.status(405).end());
+
+router.get('/:messageId', sessionHandler, messageHandler.senderAndReceiver, expressAsyncHandler(async (req, res) => {
+	if (!req.message.sent)
 		return res.status(204).end();
 
-	content = content.map(content => {
+	const content = (await Content.find({ message: req.message._id }, { id: true, order: true })).map(content => {
 		return {
 			id      : content.id,
 			order   : content.order,
@@ -75,15 +119,15 @@ router.get('/:messageId', sessionHandler, messageHandler.senderAndReceiver, expr
 	});
 
 	return res.status(200).json(req.message.from.equals(req.session.user._id) ? {
-		to          : req.message.to.map(to => to.username),
+		to          : req.message.to.map(user => user.username),
 		contentCount: req.message.contentCount,
-		createdAt   : req.message.createdAt,
+		sentAt      : req.message.sentAt,
 		content     : content
 	}
 	: {
 		from        : req.message.from.username,
 		contentCount: req.message.contentCount,
-		createdAt   : req.message.createdAt,
+		sentAt      : req.message.sentAt,
 		content     : content
 	});
 }));
@@ -92,49 +136,67 @@ router.put('/:messageId', sessionHandler, messageHandler.senderOnly, fileHandler
 	if (!req.file)
 		return res.status(400).end();
 
-	const order = String(req.body.order || '').trim();
-	const type  = String(req.body.type || '').trim();
+	try {
+		const order = String(req.body.order || '').trim();
+		const type  = String(req.body.type || '').trim();
 
-	if (!validator.isInt(order, { min: 0 }) ||
-		!validator.isMimeType(type)) {
-		await new Promise((resolve, reject) => fs.unlink(req.file.path, err => err ? reject(err) : resolve()));
-		return res.status(400).end();
-	}
+		if (!validator.isInt(order, { min: 0 }) ||
+			!validator.isMimeType(type))
+			throw 400;
 
-	if (type !== 'text/plain' &&
-		type !== 'image/gif' &&
-		type !== 'image/jpeg' &&
-		type !== 'image/png' &&
-		type !== 'application/octet-stream') {
-		await new Promise((resolve, reject) => fs.unlink(req.file.path, err => err ? reject(err) : resolve()));
-		return res.status(415).end();
-	}
+		if (type !== 'text/plain' &&
+			type !== 'image/gif' &&
+			type !== 'image/jpeg' &&
+			type !== 'image/png' &&
+			type !== 'application/octet-stream')
+			throw 415;
 
-	const contentCount = await Content.countDocuments({ message: req.message._id });
+		if (req.message.sent)
+			throw 409;
 
-	if (contentCount >= req.message.contentCount ||
-		await Content.countDocuments({ message: req.message._id, order: Number(order) })) {
-		await new Promise((resolve, reject) => fs.unlink(req.file.path, err => err ? reject(err) : resolve()));
-		return res.status(409).end();
-	}
+		const content = new Content({
+			message : req.message._id,
+			id      : req.file.filename,
+			order   : Number(order),
+			type    : type,
+			filename: req.file.originalname,
+			size    : req.file.size
+		});
+		await content.save();
 
-	const content = new Content({
-		message : req.message._id,
-		id      : req.file.filename,
-		order   : Number(order),
-		type    : type,
-		filename: req.file.originalname,
-		size    : req.file.size
-	});
-	await content.save();
+		const contentCount = await Content.countDocuments({ message: req.message._id });
 
-	logger.notice(`The content of the message ${req.file.size} bytes '${type}' is uploaded.`);
+		logger.notice(`The ${req.file.size} byte${req.file.size === 1 ? '' : 's'} '${type}' content '${content.id}' of the message '${req.message.id}' was uploaded, now ${contentCount} out of ${req.message.contentCount} content${req.message.contentCount === 1 ? '' : 's'} ready.`);
 
-	if (contentCount + 1 === req.message.contentCount) {
-		await Promise.all(req.message.to.map(user => firebaseMessage(user, req.message.title, `The user '${req.message.from.username}' sent you .`)));
+		if (contentCount < req.message.contentCount)
+			return res.status(100).end();
+		
+		req.message.sent   = true;
+		req.message.sentAt = Date.now();
+		await req.message.save();
+		
+		if (req.message.contentCount < contentCount) {
+			logger.warn(`The message '${req.message.id}' is overfilled. Expanding.`);
+
+			req.message.contentCount = contentCount;
+			await req.message.save();
+		}
+
+		logger.notice(`The message ${req.message.id} is now fulfilled, notifying the ${req.message.to.length} recipients.`);
+
+		await Promise.all(req.message.to.map(user => firebaseMessage(user, req.message.title, `The user '${req.message.from.username}' sent you ${req.message.contentCount} file${req.message.contentCount === 1 ? '' : 's'}.`)));
 		res.status(204).end();
-	} else
-		res.status(100).end();
+	} catch (err) {
+		await new Promise((resolve, reject) => fs.unlink(req.file.path, err => err ? reject(err) : resolve()));
+
+		if (Number.isInteger(err))
+			return res.status(err).end();
+
+		//
+		//	Pass the error to the default error handler.
+		//
+		throw err;
+	}
 }));
 
 router.all('/:messageId', (_, res) => res.status(405).end());
