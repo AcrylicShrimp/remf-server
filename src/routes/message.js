@@ -24,7 +24,7 @@ router.post('/', sessionHandler, expressAsyncHandler(async (req, res) => {
 	const title        = String(req.body.title || '').trim();
 	const contentCount = String(req.body.contentCount || '').trim();
 
-	if (!validator.matches(to, /(?:[a-zA-Z\d]{4,15}\n?){1,5}/) ||
+	if (!validator.matches(to, /(?:[a-zA-Z\d]{4,15}\n?){1,50}/) ||
 		!validator.matches(title, /.*/) ||
 		!validator.isInt(contentCount, { min: 1, max: 2048 }))
 		return res.status(400).end();
