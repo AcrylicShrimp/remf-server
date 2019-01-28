@@ -3,7 +3,7 @@
 
 const mongoose = require('mongoose');
 
-module.exports = mongoose.model('Session', new mongoose.Schema({
+const schema = new mongoose.Schema({
 	user: {
 		type    : mongoose.Schema.Types.ObjectId,
 		ref     : 'User',
@@ -29,4 +29,6 @@ module.exports = mongoose.model('Session', new mongoose.Schema({
 		required: true,
 		expires : '1h'
 	}
-}));
+});
+
+module.exports = mongoose.model('Session', schema);

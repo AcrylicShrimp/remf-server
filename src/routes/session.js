@@ -18,10 +18,10 @@ router.post('/', expressAsyncHandler(async (req, res) => {
 	const password      = String(req.body.password || '');
 	const firebaseToken = String(req.body.firebaseToken || '').trim();
 
-	if (!validator.isAlphanumeric(username) ||
-		!validator.isLength(username, { min: 4, max: 15 }) ||
-		!validator.isLength(password, { min: 4 }) ||
-		validator.isEmpty(firebaseToken))
+	if (!validator.isAlphanumeric(username)
+		|| !validator.isLength(username, { min: 4, max: 15 })
+		|| !validator.isLength(password, { min: 4 })
+		|| validator.isEmpty(firebaseToken))
 		return res.status(400).end();
 
 	let user = await User.findOne({ username: username }, { _id: true, password: true, loginedAt: true });
@@ -58,7 +58,7 @@ router.post('/', expressAsyncHandler(async (req, res) => {
 	user.loginedAt = session.usedAt;
 	await user.save();
 
-	logger.notice(`A new session for user '${username}' is created.`);
+	logger.notice(`A new session '${session.id}' for user '${username}' is created.`);
 
 	res.status(201).json({
 		sessionId: session.id

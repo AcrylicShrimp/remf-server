@@ -3,7 +3,7 @@
 
 const mongoose = require('mongoose');
 
-module.exports = mongoose.model('Message', new mongoose.Schema({
+const schema = new mongoose.Schema({
 	id: {
 		type    : String,
 		index   : true,
@@ -39,6 +39,7 @@ module.exports = mongoose.model('Message', new mongoose.Schema({
 	createdAt: {
 		type    : Date,
 		default : Date.now,
+		index   : true,
 		required: true
 	},
 	sentAt: {
@@ -46,4 +47,9 @@ module.exports = mongoose.model('Message', new mongoose.Schema({
 		index   : true,
 		required: false
 	}
-}));
+});
+
+schema.index({ from: 1, sent: 1, sentAt: 1 });
+schema.index({ to: 1, sent: 1, sentAt: 1 });
+
+module.exports = mongoose.model('Message', schema);

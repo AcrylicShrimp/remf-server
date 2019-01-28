@@ -3,7 +3,7 @@
 
 const mongoose = require('mongoose');
 
-module.exports = mongoose.model('Content', new mongoose.Schema({
+const schema = new mongoose.Schema({
 	message: {
 		type    : mongoose.Schema.Types.ObjectId,
 		ref     : 'Message',
@@ -39,4 +39,6 @@ module.exports = mongoose.model('Content', new mongoose.Schema({
 		index   : true,
 		required: true
 	}
-}));
+});
+
+module.exports = mongoose.model('Content', schema);

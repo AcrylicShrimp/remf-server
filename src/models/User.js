@@ -3,7 +3,7 @@
 
 const mongoose = require('mongoose');
 
-module.exports = mongoose.model('User', new mongoose.Schema({
+const schema = new mongoose.Schema({
 	username: {
 		type    : String,
 		index   : true,
@@ -30,4 +30,6 @@ module.exports = mongoose.model('User', new mongoose.Schema({
 		required: false,
 		expires : '7d'
 	}
-}));
+});
+
+module.exports = mongoose.model('User', schema);
