@@ -29,6 +29,8 @@ Did you find funny comics from internet? Let's share it with your friends! Remf 
 ### Message
 
 - `POST` `/message?sessionId=<sessionId>`
+- `GET` `/message/sent?sessionId=<sessionId>`
+- `GET` `/message/received?sessionId=<sessionId>`
 - `GET` `/message/<messageId>?sessionId=<sessionId>`
 - `PUT` `/message/<messageId>?sessionId=<sessionId>`
 
