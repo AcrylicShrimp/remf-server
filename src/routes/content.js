@@ -1,6 +1,7 @@
 
 'use strict';
 
+const accepts             = require('accepts');
 const express             = require('express');
 const expressAsyncHandler = require('express-async-handler');
 const fs                  = require('fs');
@@ -14,6 +15,11 @@ const storageSetting = require('../storage-setting');
 const router = express.Router();
 
 router.get('/:contentId', sessionHandler, contentHandler, expressAsyncHandler(async (req, res) => {
+	const accept = accepts(req);
+
+	if (!accept.type([req.content.type]))
+		return res.status(406).end();
+		
 	res.status(200).
 		header('Content-Type', req.content.type).
 		header('Content-Length', req.content.size).

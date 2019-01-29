@@ -1,6 +1,7 @@
 
 'use strict';
 
+const accepts             = require('accepts');
 const express             = require('express');
 const expressAsyncHandler = require('express-async-handler');
 const validator           = require('validator');
@@ -14,6 +15,14 @@ const User    = require('../models/User');
 const router = express.Router();
 
 router.post('/', expressAsyncHandler(async (req, res) => {
+	if (!req.is('application/json'))
+		return res.status(415).end();
+
+	const accept = accepts(req);
+
+	if (!accept.type(['application/json']))
+		return res.status(406).end();
+
 	const username      = String(req.body.username || '').trim();
 	const password      = String(req.body.password || '');
 	const firebaseToken = String(req.body.firebaseToken || '').trim();

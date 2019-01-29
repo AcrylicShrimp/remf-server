@@ -1,6 +1,7 @@
 
 'use strict';
 
+const accepts             = require('accepts');
 const express             = require('express');
 const expressAsyncHandler = require('express-async-handler');
 const fs                  = require('fs');
@@ -20,6 +21,14 @@ const User    = require('../models/User');
 const router = express.Router();
 
 router.post('/', sessionHandler, expressAsyncHandler(async (req, res) => {
+	if (!req.is('application/json'))
+		return res.status(415).end();
+		
+	const accept = accepts(req);
+
+	if (!accept.type(['application/json']))
+		return res.status(406).end();
+		
 	const to           = String(req.body.to || '').trim();
 	const title        = String(req.body.title || '').trim();
 	const contentCount = String(req.body.contentCount || '').trim();
@@ -59,6 +68,11 @@ router.post('/', sessionHandler, expressAsyncHandler(async (req, res) => {
 router.all('/', (_, res) => res.status(405).end());
 
 router.get('/sent', sessionHandler, expressAsyncHandler(async (req, res) => {
+	const accept = accepts(req);
+
+	if (!accept.type(['application/json']))
+		return res.status(406).end();
+		
 	const skip  = String(req.query.skip || '0').trim();
 	const limit = String(req.query.limit || '20').trim();
 
@@ -83,6 +97,11 @@ router.get('/sent', sessionHandler, expressAsyncHandler(async (req, res) => {
 router.all('/sent', (_, res) => res.status(405).end());
 
 router.get('/received', sessionHandler, expressAsyncHandler(async (req, res) => {
+	const accept = accepts(req);
+
+	if (!accept.type(['application/json']))
+		return res.status(406).end();
+		
 	const skip  = String(req.query.skip || '0').trim();
 	const limit = String(req.query.limit || '20').trim();
 
@@ -107,6 +126,11 @@ router.get('/received', sessionHandler, expressAsyncHandler(async (req, res) => 
 router.all('/received', (_, res) => res.status(405).end());
 
 router.get('/:messageId', sessionHandler, messageHandler.senderAndReceiver, expressAsyncHandler(async (req, res) => {
+	const accept = accepts(req);
+
+	if (!accept.type(['application/json']))
+		return res.status(406).end();
+		
 	if (!req.message.sent)
 		return res.status(204).end();
 
@@ -127,9 +151,17 @@ router.get('/:messageId', sessionHandler, messageHandler.senderAndReceiver, expr
 }));
 
 router.put('/:messageId', sessionHandler, messageHandler.senderOnly, fileHandler.single('file'), expressAsyncHandler(async (req, res) => {
+	//
+	//	NOTE:
+	//	Because multer only handles 'multipart/form-data',
+	//	we can skip unlinking received file.
+	//
+	if (!req.is('multipart/form-data'))
+		return res.status(415).end();
+
 	if (!req.file)
 		return res.status(400).end();
-
+	
 	try {
 		const order = String(req.body.order || '').trim();
 		const type  = String(req.body.type || '').trim();
