@@ -41,4 +41,6 @@ const schema = new mongoose.Schema({
 	}
 });
 
+schema.index({ message: 1, order: 1 });
+
 module.exports = mongoose.model('Content', schema);

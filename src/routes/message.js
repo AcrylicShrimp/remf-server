@@ -23,12 +23,12 @@ const router = express.Router();
 router.post('/', sessionHandler, expressAsyncHandler(async (req, res) => {
 	if (!req.is('application/json'))
 		return res.status(415).end();
-		
+
 	const accept = accepts(req);
 
 	if (!accept.type(['application/json']))
 		return res.status(406).end();
-		
+
 	const to           = String(req.body.to || '').trim();
 	const title        = String(req.body.title || '').trim();
 	const contentCount = String(req.body.contentCount || '').trim();
@@ -72,7 +72,7 @@ router.get('/sent', sessionHandler, expressAsyncHandler(async (req, res) => {
 
 	if (!accept.type(['application/json']))
 		return res.status(406).end();
-		
+
 	const skip  = String(req.query.skip || '0').trim();
 	const limit = String(req.query.limit || '20').trim();
 
@@ -80,15 +80,21 @@ router.get('/sent', sessionHandler, expressAsyncHandler(async (req, res) => {
 		|| !validator.isInt(limit, { min: 1, max: 100 }))
 		return res.status(400).end();
 
-	const message = await Message.find({ from: req.session.user._id, sent: true }, { _id: false, id: true, to: true, title: true, contentCount: true, sentAt: true })
+	let message = await Message.find({ from: req.session.user._id, sent: true }, { _id: false, id: true, from: true, to: true, title: true, contentCount: true, sentAt: true })
 									.sort({ sentAt: -1 })
 									.skip(Number(skip))
 									.limit(Number(limit))
+									.populate({
+										path  : 'from',
+										select: '-_id username'
+									})
 									.populate({
 										path  : 'to',
 										select: '-_id username'
 									});
 
+	message = message.map(message => message.toObject());
+	message.forEach(message => message.from = message.from.username);
 	message.forEach(message => message.to = message.to.map(user => user.username));
 
 	res.status(200).json(message);
@@ -101,7 +107,7 @@ router.get('/received', sessionHandler, expressAsyncHandler(async (req, res) => 
 
 	if (!accept.type(['application/json']))
 		return res.status(406).end();
-		
+
 	const skip  = String(req.query.skip || '0').trim();
 	const limit = String(req.query.limit || '20').trim();
 
@@ -109,7 +115,7 @@ router.get('/received', sessionHandler, expressAsyncHandler(async (req, res) => 
 		|| !validator.isInt(limit, { min: 1, max: 100 }))
 		return res.status(400).end();
 
-	const message = await Message.find({ to: req.session.user._id, sent: true }, { _id: false, id: true, from: true, title: true, contentCount: true, sentAt: true })
+	let message = await Message.find({ to: req.session.user._id, sent: true }, { _id: false, id: true, from: true, title: true, contentCount: true, sentAt: true })
 									.sort({ sentAt: -1 })
 									.skip(Number(skip))
 									.limit(Number(limit))
@@ -118,7 +124,9 @@ router.get('/received', sessionHandler, expressAsyncHandler(async (req, res) => 
 										select: '-_id username'
 									});
 
+	message = message.map(message => message.toObject());
 	message.forEach(message => message.from = message.from.username);
+	message.forEach(message => message.to = [ req.session.user.username ]);
 
 	res.status(200).json(message);
 }));
@@ -130,20 +138,16 @@ router.get('/:messageId', sessionHandler, messageHandler.senderAndReceiver, expr
 
 	if (!accept.type(['application/json']))
 		return res.status(406).end();
-		
+
 	if (!req.message.sent)
 		return res.status(204).end();
 
-	const content = await Content.find({ message: req.message._id }, { _id: false, id: true, order: true, type: true, filename: true, size: true });
+	const content = await Content.find({ message: req.message._id }, { _id: false, id: true, order: true, type: true, filename: true, size: true }).sort({ order: 1 });
 
-	return res.status(200).json(req.message.from.equals(req.session.user._id) ? {
-		to          : req.message.to.map(user => user.username),
-		contentCount: req.message.contentCount,
-		sentAt      : req.message.sentAt,
-		content     : content
-	}
-	: {
+	return res.status(200).json({
 		from        : req.message.from.username,
+		to          : req.message.to.map(user => user.username),
+		title       : req.message.title,
 		contentCount: req.message.contentCount,
 		sentAt      : req.message.sentAt,
 		content     : content
@@ -161,7 +165,7 @@ router.put('/:messageId', sessionHandler, messageHandler.senderOnly, fileHandler
 
 	if (!req.file)
 		return res.status(400).end();
-	
+
 	try {
 		const order = String(req.body.order || '').trim();
 		const type  = String(req.body.type || '').trim();

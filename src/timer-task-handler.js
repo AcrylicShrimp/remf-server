@@ -24,6 +24,7 @@ module.exports = interval => {
 			await Promise.all(message.map(message => Content.find({ message: message._id }, { _id: true, id: true })
 				.then(content => content.map(content => Promise.all([
 					//
+					//	NOTE:
 					//	Important!
 					//	We have to remove its contents together.
 					//
@@ -32,6 +33,7 @@ module.exports = interval => {
 				])))));
 
 			//
+			//	NOTE:
 			//	First of all, every content cannot be expired, because the message will be expired earlier than its contents and deleted together.
 			//	But when a message has been expired and deleted while the server is handling a new content of that,
 			//	the uploaded content will be isolated from its deleted message. Now this content only occupying storage, never be accessed and deleted.
