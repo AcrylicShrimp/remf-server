@@ -38,7 +38,7 @@ router.post('/', expressAsyncHandler(async (req, res) => {
 	if (!user) {
 		user = new User({
 			username: username,
-			password: helper.hashPassword(password)
+			password: await helper.hashPassword(password)
 		});
 
 		user.firebaseToken = firebaseToken;
@@ -48,7 +48,7 @@ router.post('/', expressAsyncHandler(async (req, res) => {
 		logger.notice(`A new user '${username}' is created.`);
 	}
 
-	if (user.password !== helper.hashPassword(password))
+	if (!await helper.comparePassword(password, user.password))
 		return res.status(401).end();
 
 	let session = await Session.findOne({ user: user._id }, { _id: true });
@@ -58,7 +58,7 @@ router.post('/', expressAsyncHandler(async (req, res) => {
 
 	session = new Session({
 		user: user._id,
-		id  : helper.generateId()
+		id  : await helper.generateId()
 	});
 
 	session.usedAt = session.createdAt;
