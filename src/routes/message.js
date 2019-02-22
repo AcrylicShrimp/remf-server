@@ -47,7 +47,7 @@ router.post('/', sessionHandler, expressAsyncHandler(async (req, res) => {
 		return res.status(400).end();
 
 	const message = new Message({
-		id  : helper.generateId(),
+		id  : await helper.generateId(),
 		from: req.session.user._id,
 		to  : (await Promise.all(usernameList.map(async username => {
 			const user = await User.findOne({ username: username }, { _id: true });

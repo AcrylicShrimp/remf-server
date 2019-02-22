@@ -1,11 +1,15 @@
 
 'use strict';
 
+const bcrypt = require('bcrypt');
 const crypto = require('crypto');
 
-const uuid = require('uuid');
-
 module.exports = {
-	generateId  : () => crypto.createHash('sha256').update(uuid.v4() + uuid.v4()).digest('hex'),
-	hashPassword: (password) => crypto.createHash('sha512').update(password + crypto.createHash('sha256').digest('hex')).digest('hex')
+	generateId     : () => new Promise((resolve, reject) => {
+		crypto.randomBytes(256, (err, buffer) => {
+			err ? reject(err): resolve(crypto.createHash('sha256').update(buffer).digest('hex'));
+		});
+	}),
+	hashPassword   : password => bcrypt.hash(password, 15),
+	comparePassword: (password, hash) => bcrypt.compare(password, hash)
 };
