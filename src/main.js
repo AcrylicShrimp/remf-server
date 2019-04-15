@@ -1,9 +1,8 @@
 
 'use strict';
 
-const http          = require('http');
-const https         = require('https');
-const redirectHttps = require('redirect-https');
+const http  = require('http');
+const https = require('https');
 
 const config = require('../configs/config.json');
 
@@ -28,7 +27,7 @@ database(databaseHost, null, 'remf', null, null, (err, url) => {
 	const httpPort  = config['http-port'] || 80;
 	const httpsPort = config['https-port'] || 443;
 
-	const httpServer  = http.createServer(acmeHandler.middleware(redirectHttps({ port: httpsPort })));
+	const httpServer  = http.createServer(acmeHandler.middleware(application));
 	const httpsServer = https.createServer(acmeHandler.tlsOptions, application);
 
 	httpServer.listen(httpPort, () => {
