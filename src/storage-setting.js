@@ -3,8 +3,10 @@
 
 const path = require('path');
 
+const config = require('../configs/config.json');
+
 module.exports = {
-	storageRootPath: path.resolve(__dirname, '..', 'storage'),
+	storageRootPath: config['storage-path'] || path.resolve(__dirname, '..', 'storage'),
 	contentTTL     : 
 		3			//days
 		* 24 		//hours
