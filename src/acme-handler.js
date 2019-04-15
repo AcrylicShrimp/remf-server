@@ -14,5 +14,5 @@ module.exports = greenLockExpress.create({
 	configDir      : path.resolve(__dirname, '..', 'credencials'),
 	communityMember: false,
 	agreeTos       : true,
-	debug          : false
+	debug          : process.env.NODE_ENV !== 'production'
 });
