@@ -11,7 +11,7 @@ module.exports = greenLockExpress.create({
 	server         : 'https://acme-v02.api.letsencrypt.org/directory',
 	email          : config['acme-email'],
 	approvedDomains: config['acme-domains'],
-	configDir      : path.resolve(__dirname, '..', 'credencials'),
+	configDir      : path.resolve(__dirname, '..', 'credentials'),
 	communityMember: false,
 	agreeTos       : true,
 	debug          : process.env.NODE_ENV !== 'production'
