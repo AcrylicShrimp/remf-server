@@ -29,7 +29,7 @@ router.post('/', expressAsyncHandler(async (req, res) => {
 
 	if (!validator.isAlphanumeric(username)
 		|| !validator.isLength(username, { min: 4, max: 15 })
-		|| !validator.isLength(password, { min: 4 })
+		|| !validator.isLength(password, { min: 4, max: 72 })
 		|| validator.isEmpty(firebaseToken))
 		return res.status(400).end();
 
