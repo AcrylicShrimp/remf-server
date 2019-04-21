@@ -196,7 +196,7 @@ router.put('/:messageId', sessionHandler, messageHandler.senderOnly, fileHandler
 
 		const contentCount = await Content.countDocuments({ message: req.message._id });
 
-		logger.notice(`The ${req.file.size} byte${req.file.size === 1 ? '' : 's'} '${type}' content '${content.id}' of the message '${req.message.id}' was uploaded, now ${contentCount} out of ${req.message.contentCount} content${req.message.contentCount === 1 ? '' : 's'} ready.`);
+		logger.notice(`The ${req.file.size} byte${req.file.size < 2 ? '' : 's'} '${type}' content '${content.id}' of the message '${req.message.id}' was uploaded, now ${contentCount} out of ${req.message.contentCount} content${req.message.contentCount < 2 ? '' : 's'} ready.`);
 
 		if (contentCount < req.message.contentCount)
 			return res.status(100).end();
@@ -214,7 +214,7 @@ router.put('/:messageId', sessionHandler, messageHandler.senderOnly, fileHandler
 
 		logger.notice(`The message '${req.message.id}' is now fulfilled, notifying the ${req.message.to.length} recipients.`);
 
-		await Promise.all(req.message.to.map(user => firebaseMessage(user, `'${req.message.from.username}' sent you ${req.message.contentCount} file${req.message.contentCount === 1 ? '' : 's'}.`, req.message.title)));
+		await Promise.all(req.message.to.map(user => firebaseMessage(user, `'${req.message.from.username}' sent you ${req.message.contentCount} file${req.message.contentCount < 2 ? '' : 's'}.`, req.message.title)));
 		res.status(204).end();
 	} catch (err) {
 		await new Promise((resolve, reject) => fs.unlink(req.file.path, err => err ? reject(err) : resolve()));
