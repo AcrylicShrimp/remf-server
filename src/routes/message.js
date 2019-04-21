@@ -199,7 +199,7 @@ router.put('/:messageId', sessionHandler, messageHandler.senderOnly, fileHandler
 		logger.notice(`The ${req.file.size} byte${req.file.size < 2 ? '' : 's'} '${type}' content '${content.id}' of the message '${req.message.id}' was uploaded, now ${contentCount} out of ${req.message.contentCount} content${req.message.contentCount < 2 ? '' : 's'} ready.`);
 
 		if (contentCount < req.message.contentCount)
-			return res.status(100).end();
+			return res.status(201).end();
 
 		req.message.sent   = true;
 		req.message.sentAt = Date.now();
