@@ -64,7 +64,8 @@ router.post('/', expressAsyncHandler(async (req, res) => {
 	session.usedAt = session.createdAt;
 	await session.save();
 
-	user.loginedAt = session.usedAt;
+	user.firebaseToken = firebaseToken;
+	user.loginedAt     = session.usedAt;
 	await user.save();
 
 	logger.notice(`A new session '${session.id}' for user '${username}' is created.`);
