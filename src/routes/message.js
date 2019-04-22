@@ -214,7 +214,12 @@ router.put('/:messageId', sessionHandler, messageHandler.senderOnly, fileHandler
 
 		logger.notice(`The message '${req.message.id}' is now fulfilled, notifying the ${req.message.to.length} recipients.`);
 
-		await Promise.all(req.message.to.map(user => firebaseMessage(user, `'${req.message.from.username}' sent you ${req.message.contentCount} file${req.message.contentCount < 2 ? '' : 's'}.`, req.message.title)));
+		try {
+			await Promise.all(req.message.to.map(user => firebaseMessage(user, `'${req.message.from.username}' sent you ${req.message.contentCount} file${req.message.contentCount < 2 ? '' : 's'}.`, req.message.title)));
+		} catch (err) {
+			logger.error(`An error occurred while notifying recipients :\n${err}`);
+		}
+
 		res.status(204).end();
 	} catch (err) {
 		await new Promise((resolve, reject) => fs.unlink(req.file.path, err => err ? reject(err) : resolve()));
