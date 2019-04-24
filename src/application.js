@@ -7,6 +7,8 @@ const requestHandler = require('./request-handler');
 
 const application = express();
 
+application.set('trust proxy', ['loopback', 'linklocal', 'uniquelocal']);
+
 application.use(requestHandler.logger);
 
 application.use(require('./middleware'));
