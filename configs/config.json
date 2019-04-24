@@ -1,5 +1,5 @@
 {
-	"http-port"          : 8000,
+	"http-port"          : 10000,
 	"timer-task-interval": 3600000,
 	"storage-path"       : "./storage"
 }
