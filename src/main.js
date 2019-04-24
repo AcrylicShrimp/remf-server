@@ -22,10 +22,10 @@ database(databaseHost, null, 'remf', null, null, (err, url) => {
 
 	logger.notice(`Successfully connected to the database at ${url}.`);
 
-	const httpPort   = config['http-port'] || 8000;
+	const httpPort   = config['http-port'] || 10000;
 	const httpServer = http.createServer(application);
 
-	httpServer.listen(httpPort, () => {
+	httpServer.listen(httpPort, 'localhost', () => {
 		logger.notice(`The remf HTTP server is running on port ${httpPort}.`);
 	});
 
